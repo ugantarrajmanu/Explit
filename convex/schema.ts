@@ -24,7 +24,7 @@ export default defineSchema({
     amount: v.number(),
     description: v.string(),
     splitType: v.string(), 
-  }),
+  }).index("by_group", ["groupId"]),
 
   splits: defineTable({
     expenseId: v.id("expenses"),
