@@ -5,10 +5,12 @@ import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { UserButton } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
 
 export default function GroupPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const { user } = useUser();
   const groupId = id as Id<"groups">;
   const router = useRouter();
 
@@ -22,6 +24,7 @@ export default function GroupPage({ params }: { params: Promise<{ id: string }> 
   // --- QUERIES & MUTATIONS ---
   const createExpense = useMutation(api.expenses.createExpense);
   const addMember = useMutation(api.groups.addMember);
+  const deleteGroup = useMutation(api.groups.deleteGroup);
   
   // Fetch everything we need
   const group = useQuery(api.groups.get, { id: groupId });
@@ -34,6 +37,8 @@ export default function GroupPage({ params }: { params: Promise<{ id: string }> 
   const balances = balanceData?.balances || {};
   const localSettlements = balanceData?.localSettlements || [];
   const globalSettlements = balanceData?.globalSettlements || [];
+
+  const isAdmin = groupAdmin?.tokenIdentifier.includes(user?.id || "");
 
   // --- HELPERS ---
   const getUserName = (id: string) => users?.find((u) => u._id === id)?.name || "Unknown";
@@ -50,6 +55,17 @@ export default function GroupPage({ params }: { params: Promise<{ id: string }> 
       setInputValue("");
     } catch (err) {
       alert("Failed to add user. Check username/email.");
+    }
+  };
+
+  const handleDeleteGroup = async () => {
+    if (!confirm("Are you sure you want to delete this group? This cannot be undone.")) return;
+    
+    try {
+      await deleteGroup({ groupId });
+      router.push("/"); // Redirect to dashboard
+    } catch (err: any) {
+      alert("Error: " + err.message);
     }
   };
 
@@ -105,8 +121,22 @@ export default function GroupPage({ params }: { params: Promise<{ id: string }> 
               </div>
             </div>
           </div>
-          <UserButton />
+          
+          <div className="flex items-center gap-2">
+            {/* ONLY SHOW DELETE BUTTON IF ADMIN */}
+            {isAdmin && (
+              <button
+                onClick={handleDeleteGroup}
+                className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                title="Delete Group (Admin Only)"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+            )}
+            <UserButton />
+          </div>
         </div>
+
 
         {/* 2. ADD MEMBER */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
@@ -130,9 +160,6 @@ export default function GroupPage({ params }: { params: Promise<{ id: string }> 
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 max-h-100">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Member Balances</h2>
-            {/* <span className="text-xs font-medium px-2 py-1 bg-green-100 text-green-800 rounded-full">
-              Global Context Active
-            </span> */}
           </div>
           
           <div className="space-y-3">
@@ -280,7 +307,6 @@ export default function GroupPage({ params }: { params: Promise<{ id: string }> 
                 value={desc} 
                 onChange={e => setDesc(e.target.value)}
                 className="border border-gray-300 p-2 rounded text-sm w-full text-gray-900"
-                required
               />
               <input 
                 type="number" 

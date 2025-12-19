@@ -98,5 +98,36 @@ export const getGroupAdmin = query({
   },
 });
 
+export const deleteGroup = mutation({
+  args: { groupId: v.id("groups") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthenticated");
+
+    // 1. Get the Group
+    const group = await ctx.db.get(args.groupId);
+    if (!group) throw new Error("Group not found");
+
+    // 2. Get the Current User's ID from our DB
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .first();
+
+    if (!user) throw new Error("User not found");
+
+    // 3. SECURITY CHECK: Is the caller the group creator?
+    if (group.createdBy !== user._id) {
+      throw new Error("Unauthorized: Only the admin can delete this group");
+    }
+
+    // 4. Delete the group
+    // (Note: In a production app, you might also want to delete all expenses/splits linked to this group here)
+    await ctx.db.delete(args.groupId);
+  },
+});
+
+
+
 
 
