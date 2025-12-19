@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { api } from "./_generated/api";
 
 export const create = mutation({
   args: { name: v.string() },
@@ -29,7 +30,19 @@ export const get = query({
   handler: async (ctx, args) => await ctx.db.get(args.id),
 });
 
-// ========= Adding member logic =========
+export const getGroupMembers = query({
+  args: { groupId: v.id("groups") },
+  handler: async (ctx, args) => {
+    const group = await ctx.db.get(args.groupId);
+    if (!group) return [];
+    
+    const members = await Promise.all(
+      group.members.map((userId) => ctx.db.get(userId))
+    );
+    return members.filter((m) => m !== null);
+  },
+});
+
 export const addMember = mutation({
   args: {
     groupId: v.id("groups"),
@@ -44,13 +57,13 @@ export const addMember = mutation({
 
     const input = args.usernameOrEmail.trim().toLowerCase();
 
-    // 1️⃣ Try email (fast, indexed)
+    // 1. Try email
     let userToAdd = await ctx.db
       .query("users")
       .withIndex("by_email", (q) => q.eq("email", input))
       .unique();
 
-    // 2️⃣ Try username (fast, indexed)
+    // 2. Try username
     if (!userToAdd) {
       userToAdd = await ctx.db
         .query("users")
@@ -59,11 +72,11 @@ export const addMember = mutation({
     }
 
     if (!userToAdd) {
-      throw new Error("User not found. Ask them to sign in once.");
+      throw new Error("User not found");
     }
 
     if (group.members.includes(userToAdd._id)) {
-      throw new Error("User is already in this group");
+      return; 
     }
 
     await ctx.db.patch(args.groupId, {
@@ -71,9 +84,6 @@ export const addMember = mutation({
     });
   },
 });
-
-// convex/groups.ts
-// ... keep your existing imports and create/addMember functions ...
 
 export const getMyGroups = query({
   handler: async (ctx) => {
@@ -89,21 +99,8 @@ export const getMyGroups = query({
 
     if (!user) return [];
 
-    // Fetch all groups and filter where user is a member
     const allGroups = await ctx.db.query("groups").collect();
     return allGroups.filter((g) => g.members.includes(user._id));
-  },
-});
-
-export const getGroupAdmin = query({
-  args: { groupId: v.id("groups") },
-  handler: async (ctx, args) => {
-    const group = await ctx.db.get(args.groupId);
-    if (!group) return null;
-
-    // Fetch the user who created the group
-    const adminUser = await ctx.db.get(group.createdBy);
-    return adminUser;
   },
 });
 
@@ -127,12 +124,11 @@ export const deleteGroup = mutation({
       throw new Error("Unauthorized: Only the admin can delete this group");
     }
 
-    // ✅ SINGLE SOURCE OF TRUTH
-    const balanceData = await ctx.runQuery(api.expenses.getGroupBalance, {
+    const balanceData = await ctx.runQuery(api.expenses.getGroupBalances, {
       groupId: args.groupId,
     });
 
-    const unsettled = Object.values(balanceData.balances).some(
+    const unsettled = Object.values(balanceData).some(
       (bal) => Math.abs(bal) > 0.01
     );
 
@@ -140,10 +136,9 @@ export const deleteGroup = mutation({
       throw new Error("Cannot delete group: Not all expenses are settled.");
     }
 
-    // cleanup
     const expenses = await ctx.db
       .query("expenses")
-      .filter((q) => q.eq(q.field("groupId"), args.groupId))
+      .withIndex("by_group", (q) => q.eq("groupId", args.groupId))
       .collect();
 
     for (const exp of expenses) {
@@ -157,21 +152,5 @@ export const deleteGroup = mutation({
     }
 
     await ctx.db.delete(args.groupId);
-  },
-});
-
-
-
-export const getGroupMembers = query({
-  args: { groupId: v.id("groups") },
-  handler: async (ctx, args) => {
-    const group = await ctx.db.get(args.groupId);
-    if (!group) return [];
-
-    const members = await Promise.all(
-      group.members.map((userId) => ctx.db.get(userId))
-    );
-
-    return members.filter((m) => m !== null);
   },
 });
