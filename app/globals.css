@@ -17,23 +17,34 @@
 
 /* Scrollbar */
 
-/* Ultra-thin scrollbar */
+/* Scrollbar width */
 ::-webkit-scrollbar {
   width: 2px;
 }
 
-/* Transparent track */
+/* Scrollbar track */
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 
-/* Thumb */
+/* Scrollbar thumb */
 ::-webkit-scrollbar-thumb {
-  background-color: #A855F7;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    #A855F7,
+    transparent
+  );
   border-radius: 999px;
 }
 
-/* Hover state */
+/* Optional hover state */
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #7E22CE;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    #9333EA,
+    transparent
+  );
 }
+

@@ -9,7 +9,6 @@ import {
   Plus, 
   Users, 
   ArrowRight, 
-  Wallet, 
   CreditCard, 
   Sparkles,
   Search
@@ -62,10 +61,10 @@ export default function Home() {
       <nav className="sticky top-0 z-100 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-800">
         <div className="mx-auto max-w-6xl px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-neutral-900 dark:bg-white text-white dark:text-black p-2 rounded-xl">
+            {/* <div className="bg-neutral-900 dark:bg-white text-white dark:text-black p-2 rounded-xl">
               <Wallet className="h-6 w-6" />
-            </div>
-            <span className="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">Expense Share</span>
+            </div> */}
+            <span className="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">Explit</span>
           </div>
           <div className="flex items-center gap-4">
             <ModeToggle />
