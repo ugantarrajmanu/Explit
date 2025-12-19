@@ -1,3 +1,4 @@
+import { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
@@ -42,7 +43,7 @@ export const createExpense = mutation({
     });
 
     // Calculate Splits
-    let splitsToInsert = [];
+    let splitsToInsert: { expenseId: Id<"expenses">; userId: Id<"users">; amount: number }[] = [];
 
     if (args.splitType === "EQUAL") {
       const splitAmount = args.amount / group.members.length;

@@ -1,8 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  // CRITICAL: This is what makes the toggle work
-  darkMode: ["class"],
+  darkMode: "class",
 
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",

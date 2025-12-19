@@ -15,7 +15,7 @@ export const store = mutation({
 
     // ---- Username (stable & searchable) ----
     const username =
-      identity.username ||
+      (identity.username as string | undefined) ||
       identity.nickname ||
       identity.email?.split("@")[0] ||
       identity.tokenIdentifier.slice(0, 8);

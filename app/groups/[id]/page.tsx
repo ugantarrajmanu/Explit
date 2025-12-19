@@ -157,8 +157,9 @@ export default function GroupPage({
         usernameOrEmail: inputValue.trim().toLowerCase(),
       });
       setInputValue("");
-    } catch (err: any) {
-      setMemberError("Failed to add user");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to add user";
+      setMemberError(errorMessage);
     }
   };
 
@@ -171,8 +172,9 @@ export default function GroupPage({
     try {
       await deleteGroup({ groupId });
       router.push("/");
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      const errMess = err instanceof Error ? err.message : "Failed to delete group";
+      alert(errMess);
     }
   };
 
@@ -209,8 +211,9 @@ export default function GroupPage({
       setAmount("");
       setSplitValues({});
       setSplitType("EQUAL");
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      const errMessage = err instanceof Error ? err.message : "Failed to add expense";
+      alert(errMessage);
     }
   };
 
@@ -223,6 +226,7 @@ export default function GroupPage({
         <div className="mx-auto max-w-5xl px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
+              title="Back"
               onClick={() => router.push("/")}
               className="p-2 -ml-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-600 dark:text-neutral-400"
             >
@@ -270,6 +274,7 @@ export default function GroupPage({
                 className="w-full bg-neutral-100 dark:bg-neutral-800 text-sm px-4 py-3 pr-12 rounded-xl focus:outline-none focus:ring-2 focus:ring-neutral-900 dark:focus:ring-neutral-100 transition-all placeholder:text-neutral-400"
               />
               <button
+                title="handleMember"
                 type="submit"
                 disabled={!inputValue}
                 className="absolute right-2 top-2 p-1.5 bg-neutral-900 dark:bg-white text-white dark:text-black rounded-lg hover:opacity-90 disabled:opacity-50 transition-colors"
