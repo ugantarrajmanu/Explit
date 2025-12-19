@@ -214,68 +214,7 @@ export default function GroupPage({ params }: { params: Promise<{ id: string }> 
           </div>
         </div>
 
-        {/* 4. SETTLEMENT PLAN (Who pays whom - Smart) */}
-        {/* <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h2 className="text-lg font-semibold mb-4 text-gray-900">Settlement Plan</h2>
-          
-          {localSettlements.length === 0 ? (
-            <p className="text-gray-500 text-sm italic">All debts are settled!</p>
-          ) : (
-            <div className="space-y-3">
-              {localSettlements.map((payment, idx) => {
-                // Find the corresponding global debt instruction
-                const globalPay = getGlobalContext(payment.from, payment.to);
-                
-                // Logic:
-                // 1. If globalPay exists and is less than local, it's partially offset.
-                // 2. If globalPay does NOT exist, it means the debt is FULLY wiped out by other groups.
-                const isFullySettled = !globalPay;
-                const isPartiallySettled = globalPay && globalPay.amount < payment.amount;
-                
-                return (
-                  <div key={idx} className="p-3 bg-white border border-gray-200 rounded-lg shadow-sm flex flex-col gap-2">
-
-                    {/* Top Row: Local Context (What happened in this group) *
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-gray-900">
-                        <span className="font-semibold text-red-600">{getUserName(payment.from)}</span>
-                        <span className="text-gray-400 text-sm">owes</span>
-                        <span className="font-semibold text-green-600">{getUserName(payment.to)}</span>
-                      </div>
-                      <span className={`font-mono font-bold ${isFullySettled || isPartiallySettled ? "text-gray-400 line-through text-xs" : "text-gray-900"}`}>
-                        ${payment.amount.toFixed(2)}
-                      </span>
-                    </div>
-
-                    {/* Bottom Row: The Smart Settlement Suggestion *
-                    {isFullySettled && (
-                       <div className="flex items-center justify-between bg-green-100 p-2 rounded text-sm">
-                        <span className="text-green-800 font-medium text-xs flex items-center gap-1">
-                          ✨ Fully Settled (Offset by other groups)
-                        </span>
-                        <span className="font-mono font-bold text-green-700">
-                           $0.00
-                        </span>
-                      </div>
-                    )}
-
-                    {isPartiallySettled && (
-                      <div className="flex items-center justify-between bg-yellow-50 p-2 rounded text-sm">
-                        <span className="text-yellow-800 font-medium text-xs">
-                          ✨ Partial Settle (Global Offset)
-                        </span>
-                        <span className="font-mono font-bold text-yellow-700">
-                           Pay ${globalPay.amount.toFixed(2)}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div> */}
-
+        
         {/* 5. EXPENSE HISTORY */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <h2 className="text-lg font-semibold mb-4 text-gray-900">History</h2>

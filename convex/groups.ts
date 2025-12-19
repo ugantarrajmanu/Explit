@@ -104,29 +104,68 @@ export const deleteGroup = mutation({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthenticated");
 
-    // 1. Get the Group
+    // 1. Validate Admin Access
     const group = await ctx.db.get(args.groupId);
     if (!group) throw new Error("Group not found");
 
-    // 2. Get the Current User's ID from our DB
     const user = await ctx.db
       .query("users")
       .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
       .first();
 
-    if (!user) throw new Error("User not found");
-
-    // 3. SECURITY CHECK: Is the caller the group creator?
-    if (group.createdBy !== user._id) {
+    if (!user || group.createdBy !== user._id) {
       throw new Error("Unauthorized: Only the admin can delete this group");
     }
 
-    // 4. Delete the group
-    // (Note: In a production app, you might also want to delete all expenses/splits linked to this group here)
+    // --- NEW: CHECK IF SETTLED ---
+    
+    // Fetch all expenses and splits for this group
+    const expenses = await ctx.db
+      .query("expenses")
+      .filter((q) => q.eq(q.field("groupId"), args.groupId))
+      .collect();
+
+    const balances: Record<string, number> = {};
+
+    for (const exp of expenses) {
+      const splits = await ctx.db
+        .query("splits")
+        .withIndex("by_expense", (q) => q.eq("expenseId", exp._id))
+        .collect();
+
+      // Payer gets positive (owed money)
+      balances[exp.payerId] = (balances[exp.payerId] || 0) + exp.amount;
+
+      // Splitters get negative (owe money)
+      for (const split of splits) {
+        balances[split.userId] = (balances[split.userId] || 0) - split.amount;
+      }
+    }
+
+    // Check if any single person has a non-zero balance
+    const isSettled = Object.values(balances).every((bal) => Math.abs(bal) < 0.01);
+
+    if (!isSettled) {
+      throw new Error("Cannot delete group: Not all expenses are settled. Balances must be zero.");
+    }
+
+    // --- IF SETTLED, PROCEED WITH DELETE ---
+
+    // Clean up expenses and splits (Clean database)
+    for (const exp of expenses) {
+      const splits = await ctx.db
+        .query("splits")
+        .withIndex("by_expense", (q) => q.eq("expenseId", exp._id))
+        .collect();
+      
+      await Promise.all(splits.map((s) => ctx.db.delete(s._id)));
+      await ctx.db.delete(exp._id);
+    }
+
+    // Delete the group
     await ctx.db.delete(args.groupId);
   },
 });
-
 
 
 
