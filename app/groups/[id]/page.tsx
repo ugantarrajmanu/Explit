@@ -146,29 +146,51 @@ export default function GroupPage({
       </section>
 
       {/* MEMBER BALANCES */}
+      {/* MEMBER BALANCES */}
       <section className="rounded-2xl bg-white dark:bg-neutral-900 p-6 ring-1 ring-neutral-200 dark:ring-neutral-800 space-y-4">
-        <h2 className="text-sm font-medium text-neutral-500">
-          Member balances
-        </h2>
+        <h2 className="text-sm font-medium text-neutral-500">Group members</h2>
 
-        {Object.entries(balanceData.balances).map(([userId, bal]) => (
-          <div
-            key={userId}
-            className="flex justify-between items-center rounded-xl bg-neutral-50 dark:bg-neutral-800 px-4 py-3"
-          >
-            <span className="font-medium">{getUserName(userId)}</span>
-            <span
-              className={`font-mono text-sm ${
-                bal > 0
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-red-600 dark:text-red-400"
-              }`}
-            >
-              {bal > 0 ? "+" : ""}
-              {bal.toFixed(2)}
-            </span>
-          </div>
-        ))}
+        <div className="space-y-2">
+          {group.members.map((memberId) => {
+            const balance = balanceData.balances[memberId] ?? 0;
+            const name = getUserName(memberId);
+            const isPositive = balance > 0;
+            const isNegative = balance < 0;
+            const isSettled = balance === 0;
+
+            return (
+              <div
+                key={memberId}
+                className="flex items-center justify-between rounded-xl bg-neutral-50 dark:bg-neutral-800 px-4 py-3"
+              >
+                {/* LEFT: NAME */}
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-full bg-neutral-300 dark:bg-neutral-700 flex items-center justify-center text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                    {name.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="font-medium">{name}</span>
+                </div>
+
+                {/* RIGHT: BALANCE */}
+                <div className="text-right">
+                  {isSettled ? (
+                    <span className="text-xs text-neutral-500">Settled</span>
+                  ) : (
+                    <span
+                      className={`font-mono font-semibold ${
+                        isPositive
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "text-red-600 dark:text-red-400"
+                      }`}
+                    >
+                      {isPositive ? "+" : "-"}${Math.abs(balance).toFixed(2)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </section>
 
       {/* ADD EXPENSE */}
