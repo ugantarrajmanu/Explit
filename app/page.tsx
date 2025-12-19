@@ -102,8 +102,8 @@ export default function Home() {
             {/* Decor - Adapts to theme
             <div className="absolute right-0 bottom-0 opacity-5 dark:opacity-10 transform translate-x-10 translate-y-10 pointer-events-none">
               <CreditCard className="h-64 w-64 text-neutral-900 dark:text-white" />
-            </div>
-          </div> */}
+            </div> */}
+          </div>
 
           {/* Create Group Card */}
           <div className="bg-white dark:bg-neutral-900 rounded-3xl p-8 border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col justify-center">
