@@ -50,7 +50,7 @@ export default function GroupPage({
   const users = useQuery(api.users.getAll);
   const balanceData = useQuery(api.expenses.getGroupBalances, { groupId });
 
-  if (!group || !users || !balanceData) {
+  if (!group || !users || !balanceData || !expensesList) {
     return (
       <div className="flex h-screen items-center justify-center bg-neutral-50 dark:bg-neutral-950">
         <div className="animate-pulse flex flex-col items-center gap-4">
