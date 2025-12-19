@@ -77,43 +77,54 @@ export default function Home() {
         ) : (
           <div className="space-y-3">
             {globalDebts.map((debt) => {
-              const isPositive = debt.amount > 0;
+              const youAreOwed = debt.amount > 0;
+              const amount = Math.abs(debt.amount);
 
               return (
                 <div
                   key={debt.friendId}
-                  className="flex justify-between items-center rounded-xl bg-neutral-50 dark:bg-neutral-800 px-4 py-3"
+                  className="flex items-center justify-between rounded-xl bg-neutral-50 dark:bg-neutral-800 px-4 py-3"
                 >
-                  <div>
+                  {/* LEFT: NAME + CONTEXT */}
+                  <div className="space-y-0.5">
                     <p className="font-medium">{debt.friendName}</p>
-                    <p className="text-xs text-neutral-500">
-                      {isPositive ? "owes you" : "you owe"}
-                    </p>
-                  </div>
-
-                  <div className="text-right space-y-1">
                     <p
-                      className={`font-mono font-semibold ${
-                        isPositive
+                      className={`text-xs ${
+                        youAreOwed
                           ? "text-emerald-600 dark:text-emerald-400"
                           : "text-red-600 dark:text-red-400"
                       }`}
                     >
-                      ${Math.abs(debt.amount).toFixed(2)}
+                      {youAreOwed ? "owes you" : "you owe"}
+                    </p>
+                  </div>
+
+                  {/* RIGHT: AMOUNT + ACTION */}
+                  <div className="text-right space-y-1">
+                    <p
+                      className={`font-mono font-semibold ${
+                        youAreOwed
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "text-red-600 dark:text-red-400"
+                      }`}
+                    >
+                      ${amount.toFixed(2)}
                     </p>
 
-                    {!isPositive && (
+                    {!youAreOwed && (
                       <button
                         onClick={() =>
-                          handleSettle(
-                            debt.friendId,
-                            debt.friendName,
-                            Math.abs(debt.amount)
-                          )
+                          handleSettle(debt.friendId, debt.friendName, amount)
                         }
-                        className="text-xs font-medium text-emerald-600 hover:underline"
+                        className="
+                    inline-flex items-center gap-1
+                    text-xs font-medium
+                    text-neutral-600 dark:text-neutral-300
+                    hover:text-neutral-900 dark:hover:text-white
+                    transition
+                  "
                       >
-                        Settle
+                        Settle up →
                       </button>
                     )}
                   </div>
