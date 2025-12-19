@@ -6,7 +6,11 @@ export const createExpense = mutation({
     groupId: v.id("groups"),
     amount: v.number(),
     description: v.string(),
-    splitType: v.union(v.literal("EQUAL"), v.literal("EXACT"), v.literal("PERCENT")),
+    splitType: v.union(
+      v.literal("EQUAL"),
+      v.literal("EXACT"),
+      v.literal("PERCENT")
+    ),
     // Optional: Only needed for EXACT or PERCENT
     splitData: v.optional(
       v.array(
@@ -23,7 +27,9 @@ export const createExpense = mutation({
 
     const user = await ctx.db
       .query("users")
-      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .withIndex("by_token", (q) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier)
+      )
       .first();
     if (!user) throw new Error("User not found");
 
@@ -57,7 +63,9 @@ export const createExpense = mutation({
       if (args.splitType === "EXACT") {
         const total = args.splitData.reduce((sum, item) => sum + item.value, 0);
         if (Math.abs(total - args.amount) > 0.01) {
-          throw new Error(`Splits sum to ${total}, but expense is ${args.amount}`);
+          throw new Error(
+            `Splits sum to ${total}, but expense is ${args.amount}`
+          );
         }
         splitsToInsert = args.splitData.map((item) => ({
           expenseId,
@@ -65,7 +73,10 @@ export const createExpense = mutation({
           amount: item.value,
         }));
       } else if (args.splitType === "PERCENT") {
-        const totalPercent = args.splitData.reduce((sum, item) => sum + item.value, 0);
+        const totalPercent = args.splitData.reduce(
+          (sum, item) => sum + item.value,
+          0
+        );
         if (Math.abs(totalPercent - 100) > 0.01) {
           throw new Error(`Percentages sum to ${totalPercent}%, must be 100%`);
         }
@@ -78,7 +89,9 @@ export const createExpense = mutation({
     }
 
     // 3. Batch Insert
-    await Promise.all(splitsToInsert.map((split) => ctx.db.insert("splits", split)));
+    await Promise.all(
+      splitsToInsert.map((split) => ctx.db.insert("splits", split))
+    );
   },
 });
 
@@ -86,20 +99,20 @@ export const getGroupBalance = query({
   args: { groupId: v.id("groups") },
   handler: async (ctx, args) => {
     const group = await ctx.db.get(args.groupId);
-    
+
     // --- FIX START: Handle missing group gracefully ---
     if (!group) {
       // Return empty structure instead of throwing an error
-      return { 
-        balances: {}, 
-        localSettlements: [], 
-        globalSettlements: [] 
+      return {
+        balances: {},
+        localSettlements: [],
+        globalSettlements: [],
       };
     }
     // --- FIX END ---
 
     // ... (Rest of the logic remains exactly the same) ...
-    
+
     // 1. LOCAL GROUP CALCULATION
     const localExpenses = await ctx.db
       .query("expenses")
@@ -123,7 +136,7 @@ export const getGroupBalance = query({
     // 2. GLOBAL CONTEXT CALCULATION
     const globalBalances: Record<string, number> = {};
     const allExpenses = await ctx.db.query("expenses").collect();
-    
+
     for (const exp of allExpenses) {
       if (!group.members.includes(exp.payerId)) continue;
 
@@ -131,12 +144,14 @@ export const getGroupBalance = query({
         .query("splits")
         .withIndex("by_expense", (q) => q.eq("expenseId", exp._id))
         .collect();
-      
-      globalBalances[exp.payerId] = (globalBalances[exp.payerId] || 0) + exp.amount;
+
+      globalBalances[exp.payerId] =
+        (globalBalances[exp.payerId] || 0) + exp.amount;
 
       for (const split of splits) {
         if (group.members.includes(split.userId)) {
-          globalBalances[split.userId] = (globalBalances[split.userId] || 0) - split.amount;
+          globalBalances[split.userId] =
+            (globalBalances[split.userId] || 0) - split.amount;
         }
       }
     }
@@ -152,7 +167,8 @@ export const getGroupBalance = query({
       }
 
       const results = [];
-      let i = 0, j = 0;
+      let i = 0,
+        j = 0;
 
       while (i < debtors.length && j < creditors.length) {
         const debtor = debtors[i];
@@ -193,9 +209,9 @@ export const getExpenses = query({
     const expensesWithNames = await Promise.all(
       expenses.map(async (exp) => {
         const payer = await ctx.db.get(exp.payerId);
-        return { 
-          ...exp, 
-          payerName: payer?.name || "Unknown" 
+        return {
+          ...exp,
+          payerName: payer?.name || "Unknown",
         };
       })
     );
@@ -211,7 +227,9 @@ export const getGlobalBalances = query({
 
     const user = await ctx.db
       .query("users")
-      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .withIndex("by_token", (q) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier)
+      )
       .first();
     if (!user) return [];
 
@@ -235,7 +253,7 @@ export const getGlobalBalances = query({
         .query("splits")
         .withIndex("by_expense", (q) => q.eq("expenseId", expense._id))
         .collect();
-      
+
       for (const split of splits) {
         if (split.userId === user._id) continue; // Skip my own split
         netMap[split.userId] = (netMap[split.userId] || 0) + split.amount;
@@ -255,11 +273,65 @@ export const getGlobalBalances = query({
       if (Math.abs(amount) < 0.01) continue; // Skip settled debts
       const friend = await ctx.db.get(friendId as any);
       results.push({
+        friendId: friendId, // <--- ADD THIS LINE
         friendName: friend?.name || "Unknown",
-        amount, // Positive = They owe me, Negative = I owe them
+        amount,
       });
     }
 
     return results;
+  },
+});
+
+export const settleGlobalDebt = mutation({
+  args: {
+    friendId: v.id("users"),
+    amount: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthenticated");
+
+    const currentUser = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier)
+      )
+      .first();
+
+    if (!currentUser) throw new Error("User not found");
+
+    // 1. Find a common group to record this transaction in
+    // We just need ANY valid group where both users are members.
+    const allGroups = await ctx.db.query("groups").collect();
+
+    const commonGroup = allGroups.find(
+      (g) =>
+        g.members.includes(currentUser._id) && g.members.includes(args.friendId)
+    );
+
+    if (!commonGroup) {
+      throw new Error(
+        "No common group found with this friend to record the settlement."
+      );
+    }
+
+    // 2. Record the Settlement in that group
+    // (This effectively clears the global debt because our math checks all groups)
+    const expenseId = await ctx.db.insert("expenses", {
+      groupId: commonGroup._id,
+      payerId: currentUser._id,
+      amount: args.amount,
+      description: "Global Settlement (Dashboard)",
+      splitType: "EXACT",
+    });
+
+    await ctx.db.insert("splits", {
+      expenseId,
+      userId: args.friendId,
+      amount: args.amount,
+    });
+
+    return commonGroup.name; // Return name to show in alert
   },
 });

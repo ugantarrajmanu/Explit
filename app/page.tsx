@@ -4,26 +4,41 @@ import { api } from "../convex/_generated/api";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { UserButton, useUser } from "@clerk/nextjs";
+import { CheckCircle2 } from "lucide-react"; // Import Icon
+import { Id } from "../convex/_generated/dataModel";
 
 export default function Home() {
   const storeUser = useMutation(api.users.store);
   const createGroup = useMutation(api.groups.create);
   const myGroups = useQuery(api.groups.getMyGroups);
   const globalDebts = useQuery(api.expenses.getGlobalBalances);
-  
+  const settleGlobal = useMutation(api.expenses.settleGlobalDebt); // <--- New Mutation
+
   const router = useRouter();
   const { user } = useUser();
   const [groupName, setGroupName] = useState("");
 
   useEffect(() => {
-    if (user) {
-      storeUser();
-    }
+    if (user) storeUser();
   }, [user, storeUser]);
 
   const handleCreate = async () => {
     const groupId = await createGroup({ name: groupName });
     router.push(`/groups/${groupId}`);
+  };
+
+  // --- NEW HANDLER ---
+  const handleSettle = async (friendId: string, friendName: string, amount: number) => {
+    if (!confirm(`Mark that you paid ${friendName} $${amount.toFixed(2)}?`)) return;
+    
+    try {
+      const groupName = await settleGlobal({ 
+        friendId: friendId as Id<"users">, 
+        amount 
+      });
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    }
   };
 
   return (
@@ -36,25 +51,45 @@ export default function Home() {
           <UserButton afterSignOutUrl="/" />
         </div>
 
+        {/* --- GLOBAL STATUS CARD --- */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Overall Status</h2>
           {globalDebts === undefined ? (
             <p className="text-gray-500 text-sm">Loading...</p>
           ) : globalDebts.length === 0 ? (
-            <p className="text-gray-500 text-sm italic">You are all settled up!</p>
+            <div className="flex flex-col items-center text-center p-4">
+               <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-2">
+                 <CheckCircle2 className="text-green-600 w-6 h-6" />
+               </div>
+               <p className="text-gray-900 font-medium">You are all settled up!</p>
+               <p className="text-gray-500 text-xs">No debts found across any groups.</p>
+            </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {globalDebts.map((debt, idx) => (
-                <div key={idx} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                  <span className="font-medium text-gray-900">{debt.friendName}</span>
-                  <div className="text-right">
-                    <span className={`block font-bold ${debt.amount > 0 ? "text-green-600" : "text-red-600"}`}>
-                      {debt.amount > 0 ? "owes you" : "you owe"}
-                    </span>
-                    <span className={`font-mono font-bold ${debt.amount > 0 ? "text-green-600" : "text-red-600"}`}>
-                      ${Math.abs(debt.amount).toFixed(2)}
-                    </span>
+                <div key={idx} className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-medium text-gray-900">{debt.friendName}</span>
+                    <div className="text-right">
+                      <span className={`block text-xs font-bold uppercase ${debt.amount > 0 ? "text-green-600" : "text-red-600"}`}>
+                        {debt.amount > 0 ? "owes you" : "you owe"}
+                      </span>
+                      <span className={`font-mono font-bold text-lg ${debt.amount > 0 ? "text-green-600" : "text-red-600"}`}>
+                        ${Math.abs(debt.amount).toFixed(2)}
+                      </span>
+                    </div>
                   </div>
+
+                  {/* SETTLE BUTTON (Only if I owe money) */}
+                  {debt.amount < -0.01 && (
+                    <button
+                      onClick={() => handleSettle(debt.friendId, debt.friendName, Math.abs(debt.amount))}
+                      className="w-full mt-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2 rounded shadow-sm flex items-center justify-center gap-2 transition-colors"
+                    >
+                      <CheckCircle2 className="w-3 h-3" />
+                      Settle Up
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -84,16 +119,8 @@ export default function Home() {
         {/* List of My Groups */}
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-gray-900">My Groups</h2>
-          
-          {myGroups === undefined ? (
-            <p className="text-gray-500">Loading...</p>
-          ) : myGroups.length === 0 ? (
-            <div className="text-center p-6 bg-white rounded-xl border border-dashed border-gray-300">
-              <p className="text-gray-500">You are not in any groups yet.</p>
-            </div>
-          ) : (
-            <div className="grid gap-3">
-              {myGroups.map((group) => (
+          {/* ... (Keep existing group list code) ... */}
+             {myGroups?.map((group) => (
                 <button
                   key={group._id}
                   onClick={() => router.push(`/groups/${group._id}`)}
@@ -106,8 +133,6 @@ export default function Home() {
                   <span className="text-gray-400 group-hover:text-gray-900">→</span>
                 </button>
               ))}
-            </div>
-          )}
         </div>
 
       </div>

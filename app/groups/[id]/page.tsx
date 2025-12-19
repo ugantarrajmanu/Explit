@@ -254,8 +254,8 @@ export default function GroupPage({ params }: { params: Promise<{ id: string }> 
                 onChange={e => setAmount(e.target.value)}
                 className="border border-gray-300 p-2 rounded text-sm w-full text-gray-900"
                 required
-                min="0.01"
-                step="0.01"
+                min="1"
+                step="1"
               />
             </div>
 
@@ -276,7 +276,7 @@ export default function GroupPage({ params }: { params: Promise<{ id: string }> 
             </div>
 
             {/* Split Inputs */}
-            <div className="space-y-2 max-h-48 overflow-y-auto border-t pt-2">
+            <div className="space-y-2 max-h-48 overflow-y-auto border-t pt-2 text-gray-900">
               {splitType === "EQUAL" && (
                 <p className="text-xs text-gray-500 text-center italic py-2">
                   Split equally: ${(parseFloat(amount || "0") / group.members.length).toFixed(2)} / person
@@ -295,6 +295,8 @@ export default function GroupPage({ params }: { params: Promise<{ id: string }> 
                             onChange={(e) => setSplitValues({...splitValues, [memberId]: e.target.value})}
                             placeholder="0"
                             className="w-full border p-1 rounded text-right pr-6"
+                            min="1"
+                            required
                         />
                         <span className="absolute right-2 top-1 text-gray-400 text-xs">
                             {splitType === "EXACT" ? "$" : "%"}
