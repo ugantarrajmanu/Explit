@@ -9,7 +9,6 @@ import {
   Plus, 
   Users, 
   ArrowRight, 
-  CreditCard, 
   Sparkles,
   Search
 } from "lucide-react";
