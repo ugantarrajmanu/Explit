@@ -60,12 +60,14 @@ export default function Home() {
       </header>
 
       {/* OVERALL STATUS */}
-      <section className="rounded-2xl bg-white dark:bg-neutral-900 p-6 ring-1 ring-neutral-200 dark:ring-neutral-800">
-        <h2 className="text-sm font-medium text-neutral-500 mb-4">
-          Overall status
+      <section className="rounded-2xl bg-white dark:bg-neutral-900 p-6 ring-1 ring-neutral-200 dark:ring-neutral-800 space-y-4">
+        <h2 className="text-sm font-medium text-neutral-500">
+          Overall balances
         </h2>
 
-        {globalDebts?.length === 0 ? (
+        {globalDebts === undefined ? (
+          <p className="text-sm text-neutral-500">Loading…</p>
+        ) : globalDebts.length === 0 ? (
           <div className="flex items-center gap-3">
             <div className="rounded-full bg-emerald-100 dark:bg-emerald-900/30 p-2">
               <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
@@ -73,15 +75,58 @@ export default function Home() {
             <span className="font-medium">You’re fully settled</span>
           </div>
         ) : (
-          <p className="text-sm text-neutral-500">Pending balances</p>
+          <div className="space-y-3">
+            {globalDebts.map((debt) => {
+              const isPositive = debt.amount > 0;
+
+              return (
+                <div
+                  key={debt.friendId}
+                  className="flex justify-between items-center rounded-xl bg-neutral-50 dark:bg-neutral-800 px-4 py-3"
+                >
+                  <div>
+                    <p className="font-medium">{debt.friendName}</p>
+                    <p className="text-xs text-neutral-500">
+                      {isPositive ? "owes you" : "you owe"}
+                    </p>
+                  </div>
+
+                  <div className="text-right space-y-1">
+                    <p
+                      className={`font-mono font-semibold ${
+                        isPositive
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "text-red-600 dark:text-red-400"
+                      }`}
+                    >
+                      ${Math.abs(debt.amount).toFixed(2)}
+                    </p>
+
+                    {!isPositive && (
+                      <button
+                        onClick={() =>
+                          handleSettle(
+                            debt.friendId,
+                            debt.friendName,
+                            Math.abs(debt.amount)
+                          )
+                        }
+                        className="text-xs font-medium text-emerald-600 hover:underline"
+                      >
+                        Settle
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
       </section>
 
       {/* CREATE GROUP */}
       <section className="rounded-2xl bg-white dark:bg-neutral-900 p-6 ring-1 ring-neutral-200 dark:ring-neutral-800 space-y-4">
-        <h2 className="text-sm font-medium text-neutral-500">
-          Create group
-        </h2>
+        <h2 className="text-sm font-medium text-neutral-500">Create group</h2>
 
         <input
           value={groupName}
@@ -101,9 +146,7 @@ export default function Home() {
 
       {/* MY GROUPS */}
       <section className="space-y-3">
-        <h2 className="text-sm font-medium text-neutral-500">
-          Your groups
-        </h2>
+        <h2 className="text-sm font-medium text-neutral-500">Your groups</h2>
 
         {myGroups?.map((group) => (
           <button

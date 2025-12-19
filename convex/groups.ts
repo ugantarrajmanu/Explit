@@ -27,10 +27,12 @@ export const get = query({
   handler: async (ctx, args) => await ctx.db.get(args.id),
 });
 
+
+// ========= Adding member logic =========
 export const addMember = mutation({
   args: {
     groupId: v.id("groups"),
-    usernameOrEmail: v.string(), // Renamed argument
+    usernameOrEmail: v.string(),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -39,20 +41,28 @@ export const addMember = mutation({
     const group = await ctx.db.get(args.groupId);
     if (!group) throw new Error("Group not found");
 
-    // 1. Try to find by Email
+    const input = args.usernameOrEmail.trim().toLowerCase();
+
+    // 1️⃣ Try email (fast, indexed)
     let userToAdd = await ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", args.usernameOrEmail))
-      .first();
+      .withIndex("by_email", (q) => q.eq("email", input))
+      .unique();
 
-    // 2. If not found, try to find by Name (Linear search, simplistic for this demo)
+    // 2️⃣ Try username (fast, indexed)
     if (!userToAdd) {
-      const allUsers = await ctx.db.query("users").collect();
-      userToAdd = allUsers.find(u => u.name === args.usernameOrEmail) || null;
+      userToAdd = await ctx.db
+        .query("users")
+        .withIndex("by_username", (q) =>
+          q.eq("username", input)
+        )
+        .unique();
     }
 
     if (!userToAdd) {
-      throw new Error("User not found by email or username.");
+      throw new Error(
+        "User not found. Ask them to sign in once."
+      );
     }
 
     if (group.members.includes(userToAdd._id)) {

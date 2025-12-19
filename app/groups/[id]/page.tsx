@@ -6,11 +6,7 @@ import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import {
-  ArrowLeft,
-  Trash2,
-  CheckCircle2,
-} from "lucide-react";
+import { ArrowLeft, Trash2, CheckCircle2 } from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
 
 type SplitType = "EQUAL" | "EXACT" | "PERCENT";
@@ -24,7 +20,6 @@ export default function GroupPage({
   const groupId = id as Id<"groups">;
 
   const router = useRouter();
-  const { user } = useUser();
 
   const [desc, setDesc] = useState("");
   const [amount, setAmount] = useState("");
@@ -35,7 +30,6 @@ export default function GroupPage({
   const createExpense = useMutation(api.expenses.createExpense);
   const addMember = useMutation(api.groups.addMember);
   const deleteGroup = useMutation(api.groups.deleteGroup);
-  const recordSettlement = useMutation(api.expenses.recordSettlement);
 
   const group = useQuery(api.groups.get, { id: groupId });
   const users = useQuery(api.users.getAll);
@@ -52,8 +46,16 @@ export default function GroupPage({
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
-    await addMember({ groupId, usernameOrEmail: inputValue });
-    setInputValue("");
+
+    try {
+      await addMember({
+        groupId,
+        usernameOrEmail: inputValue.trim().toLowerCase(),
+      });
+      setInputValue("");
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   const handleDeleteGroup = async () => {
@@ -127,9 +129,7 @@ export default function GroupPage({
 
       {/* ADD MEMBER */}
       <section className="rounded-2xl bg-white dark:bg-neutral-900 p-6 ring-1 ring-neutral-200 dark:ring-neutral-800 space-y-4">
-        <h2 className="text-sm font-medium text-neutral-500">
-          Add member
-        </h2>
+        <h2 className="text-sm font-medium text-neutral-500">Add member</h2>
 
         <form onSubmit={handleAddMember} className="flex gap-2">
           <input
@@ -156,9 +156,7 @@ export default function GroupPage({
             key={userId}
             className="flex justify-between items-center rounded-xl bg-neutral-50 dark:bg-neutral-800 px-4 py-3"
           >
-            <span className="font-medium">
-              {getUserName(userId)}
-            </span>
+            <span className="font-medium">{getUserName(userId)}</span>
             <span
               className={`font-mono text-sm ${
                 bal > 0
@@ -175,9 +173,7 @@ export default function GroupPage({
 
       {/* ADD EXPENSE */}
       <section className="rounded-2xl bg-white dark:bg-neutral-900 p-6 ring-1 ring-neutral-200 dark:ring-neutral-800 space-y-5">
-        <h2 className="text-sm font-medium text-neutral-500">
-          Add expense
-        </h2>
+        <h2 className="text-sm font-medium text-neutral-500">Add expense</h2>
 
         <form onSubmit={handleAddExpense} className="space-y-4">
           <input
@@ -199,22 +195,20 @@ export default function GroupPage({
 
           {/* SPLIT TYPE TOGGLE */}
           <div className="flex gap-2 rounded-xl bg-neutral-100 dark:bg-neutral-800 p-1">
-            {(["EQUAL", "EXACT", "PERCENT"] as SplitType[]).map(
-              (type) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => setSplitType(type)}
-                  className={`flex-1 rounded-lg py-1.5 text-xs font-medium transition ${
-                    splitType === type
-                      ? "bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow"
-                      : "text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
-                  }`}
-                >
-                  {type}
-                </button>
-              )
-            )}
+            {(["EQUAL", "EXACT", "PERCENT"] as SplitType[]).map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => setSplitType(type)}
+                className={`flex-1 rounded-lg py-1.5 text-xs font-medium transition ${
+                  splitType === type
+                    ? "bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow"
+                    : "text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
+                }`}
+              >
+                {type}
+              </button>
+            ))}
           </div>
 
           {/* SPLIT INPUTS */}

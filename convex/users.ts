@@ -1,5 +1,4 @@
 import { mutation, query } from "./_generated/server";
-import { v } from "convex/values";
 
 export const store = mutation({
   args: {},
@@ -7,40 +6,46 @@ export const store = mutation({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return null;
 
-    // Check if we've already stored this user
-    const user = await ctx.db
+    const existing = await ctx.db
       .query("users")
-      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .withIndex("by_token", q =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier)
+      )
       .unique();
 
-    // --- NEW LOGIC: SMART NAME GENERATION ---
-    // 1. Use their real name if available
-    // 2. Use their nickname/username if available
-    // 3. Fallback to the part of email before '@' (e.g. "bob" from "bob@gmail.com")
-    // 4. Fallback to "Guest"
-    const displayName = 
-      identity.name || 
-      identity.nickname || 
-      identity.email?.split("@")[0] || 
+    // ---- Username (stable & searchable) ----
+    const username =
+      identity.username ||
+      identity.nickname ||
+      identity.email?.split("@")[0] ||
+      identity.tokenIdentifier.slice(0, 8);
+
+    // ---- Display name (UI only) ----
+    const name =
+      identity.name ||
+      identity.nickname ||
+      username ||
       "Guest";
 
-    if (user !== null) {
-      // If the user exists but their name in our DB is "User" or outdated, update it now.
-      if (user.name !== displayName) {
-        await ctx.db.patch(user._id, { name: displayName, email: identity.email! });
-      }
-      return user._id;
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        name,
+        email: identity.email!,
+        username: username.toLowerCase(),
+      });
+      return existing._id;
     }
 
-    // New user
     return await ctx.db.insert("users", {
-      name: displayName,
       tokenIdentifier: identity.tokenIdentifier,
       email: identity.email!,
+      name,
+      username: String(username).toLowerCase(),
     });
   },
 });
 
 export const getAll = query({
-  handler: async (ctx) => await ctx.db.query("users").collect(),
+  handler: async (ctx) => ctx.db.query("users").collect(),
 });
+ 
