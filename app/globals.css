@@ -12,3 +12,28 @@
     color-scheme: dark;
   }
 }
+
+
+
+/* Scrollbar */
+
+/* Ultra-thin scrollbar */
+::-webkit-scrollbar {
+  width: 2px;
+}
+
+/* Transparent track */
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Thumb */
+::-webkit-scrollbar-thumb {
+  background-color: #A855F7;
+  border-radius: 999px;
+}
+
+/* Hover state */
+::-webkit-scrollbar-thumb:hover {
+  background-color: #7E22CE;
+}

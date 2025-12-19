@@ -430,7 +430,7 @@ export default function GroupPage({
               </h2>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+            <div className="flex-1 max-h-[43rem] overflow-y-auto p-4 space-y-2 custom-scrollbar">
               {expensesList.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-neutral-400 space-y-4 opacity-60">
                   <div className="h-16 w-16 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center">
