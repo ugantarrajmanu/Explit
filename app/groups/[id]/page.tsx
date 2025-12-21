@@ -158,7 +158,7 @@ export default function GroupPage({
       });
       setInputValue("");
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to add user";
+      const errorMessage = "Failed to add user";
       setMemberError(errorMessage);
     }
   };
